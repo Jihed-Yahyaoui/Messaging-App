@@ -44,6 +44,7 @@ export default function Messenger() {
       for (let [filename, file] of files) {
         const newFile = { senderId: id, secondUserId, filename, mimetype: file.type };
         socket.emit("message", newFile);
+        
       }
     }
   };
