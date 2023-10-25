@@ -13,11 +13,11 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
-    file: {
+    filename: {
         type: String,
         default: ""
     },
-    fileType: {
+    mimetype: {
         type: String,
         default: ""
     }

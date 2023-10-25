@@ -48,8 +48,10 @@ io.on('connect', (socket) => {
 // Adding request handlers
 const userRouter = require('./routes/userRouter')
 const messageRouter = require('./routes/messageRouter')
+const fileRouter = require('./routes/fileRouter')
 
 app.use('/user', userRouter)
 app.use('/message', messageRouter)
+app.use('/file', fileRouter)
 
 server.listen(process.env.SERVER_PORT, () => console.log("listening..."))

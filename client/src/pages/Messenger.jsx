@@ -1,40 +1,80 @@
-import {
-  Box,
-  ButtonBase,
-  Grid,
-  InputAdornment,
-  TextField,
-} from "@mui/material";
+import { Box, Grid, TextField } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import SendIcon from "@mui/icons-material/Send";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { useParams } from "react-router-dom";
 import { socket } from "../utils/socket";
 import { getData } from "../utils/fetch";
+import InputBtn from "../components/InputBtn";
+import FilesUploadBox from "../components/FilesUploadBox";
 
 export default function Messenger() {
   const [messages, setMessages] = useState([]);
   const [inputVal, setInputVal] = useState("");
+  const [files, setFiles] = useState(new FormData());
+  const areFilesEmpty = files.keys().next().done;
+
   const id = useSelector((state) => state.user.id); // User Id
   const secondUserId = useParams(id).id; // The second user id
 
+  // Adds a message to the interface
   const addMessage = ({ text, senderId }) => {
-    // Adds a message to the interface
-
-    // Check if the sender belongs to the active users in the conversation
     if (senderId === secondUserId || senderId === id)
       setMessages([{ senderId, text }, ...messages]);
   };
 
+  // Sends messages and files and adds them to the interface
   const sendMessage = () => {
-    // Sends a message and adds it to the interface
-    if (!inputVal) return;
+    if (inputVal) {
+      const newMsg = { senderId: id, secondUserId, text: inputVal };
+      setMessages([newMsg, ...messages]);
+      setInputVal("");
 
-    const newMsg = { senderId: id, secondUserId, text: inputVal };
-    setMessages([newMsg, ...messages]);
-    setInputVal("");
+      socket.emit("message", newMsg);
+    }
 
-    socket.emit("message", newMsg);
+    if (!areFilesEmpty) {
+      fetch(`http://localhost:5000/file/${secondUserId}?senderId=${id}`, {
+        method: "POST",
+        body: files,
+      }).then((res) => console.log(res));
+
+      // eslint-disable-next-line no-unused-vars
+      for (let [filename, file] of files) {
+        const newFile = { senderId: id, secondUserId, filename, mimetype: file.type };
+        socket.emit("message", newFile);
+      }
+    }
+  };
+
+  // Add one or many files (NO duplicates)
+  const addFile = async () => {
+    const selectedFiles = await window.showOpenFilePicker({ multiple: true });
+    const readingFiles = new FormData();
+
+    // eslint-disable-next-line no-unused-vars
+    for (let [name, file] of files) readingFiles.append(name, file);
+
+    for (let selectedFile of selectedFiles) {
+      let file = await selectedFile.getFile();
+      if (readingFiles.get(file.name)) {
+        console.log("Duplicate file found!");
+        return;
+      }
+      readingFiles.append(file.name, file);
+    }
+    setFiles(readingFiles);
+  };
+
+  const removeFile = (filename) => {
+    const readingFiles = new FormData();
+
+    // eslint-disable-next-line no-unused-vars
+    for (let [name, file] of files) readingFiles.append(name, file);
+
+    readingFiles.delete(filename);
+    setFiles(readingFiles);
   };
 
   // Add socket message listener
@@ -54,11 +94,13 @@ export default function Messenger() {
   }, []);
 
   return (
+    // The parent container
     <Grid
       container
       direction="column"
       sx={{ width: "50%", margin: "3rem auto" }}
     >
+      {/* The message container */}
       <Grid
         item
         container
@@ -69,9 +111,12 @@ export default function Messenger() {
           overflowY: "auto",
           border: "1px solid #ccc",
           borderRadius: "10px",
+          position: "relative",
         }}
       >
+        {/* Messages are mapped through and shown here */}
         {messages.map((msg, index) => (
+          // Message container
           <Grid
             item
             container
@@ -86,6 +131,7 @@ export default function Messenger() {
               border: "1px solid #ccc",
             }}
           >
+            {/* Message text container */}
             <Grid
               item
               sx={{
@@ -101,27 +147,45 @@ export default function Messenger() {
           </Grid>
         ))}
       </Grid>
-      <TextField
-        value={inputVal}
-        variant="outlined"
-        autoComplete="false"
-        sx={{ "& .MuiInputBase-root": { paddingRight: "6px" } }}
-        onChange={(e) => setInputVal(e.target.value)}
-        onKeyDown={(e) => (e.key === "Enter" ? sendMessage() : null)}
-        InputProps={{
-          endAdornment: (
-            <InputAdornment
-              position="end"
-              sx={{ cursor: "pointer" }}
-              onClick={sendMessage}
-            >
-              <ButtonBase>
-                <SendIcon sx={{ margin: "0.4em" }} />
-              </ButtonBase>
-            </InputAdornment>
-          ),
-        }}
-      />
+      {/* A container for input and upload */}
+      <Box sx={{ position: "relative", width: "100%" }}>
+        {/* Upload Box */}
+        <FilesUploadBox
+          files={files}
+          isEmpty={areFilesEmpty}
+          addFile={addFile}
+          removeFile={removeFile}
+        />
+        {/* Input Box */}
+        <TextField
+          value={inputVal}
+          variant="outlined"
+          autoComplete="false"
+          sx={{
+            width: "-webkit-fill-available",
+            "& .MuiInputBase-root": {
+              paddingRight: "6px",
+            },
+          }}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={(e) => (e.key === "Enter" ? sendMessage() : null)}
+          InputProps={{
+            endAdornment: (
+              // Send button and upload button
+              <>
+                {areFilesEmpty && (
+                  <InputBtn onClick={addFile}>
+                    <AttachFileIcon />
+                  </InputBtn>
+                )}
+                <InputBtn onClick={sendMessage}>
+                  <SendIcon />
+                </InputBtn>
+              </>
+            ),
+          }}
+        />
+      </Box>
     </Grid>
   );
 }

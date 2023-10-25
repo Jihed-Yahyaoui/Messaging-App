@@ -9,7 +9,7 @@ const initialState = {
 }
 
 const persistConfig = {
-    key: 'root',
+    key: 'jwt',
     storage,
   }
 

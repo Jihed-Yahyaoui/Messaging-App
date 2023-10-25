@@ -20,7 +20,7 @@ module.exports = {
             .select('-_id messages')
             .populate({
                 path: 'messages',
-                select: '-_id senderId text file fileType'
+                select: '-_id senderId text filename mimetype'
             })
 
         if (!conversation) return res.status(204).json({})
