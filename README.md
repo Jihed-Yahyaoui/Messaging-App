@@ -18,6 +18,8 @@ Once you obtain the id, open the newly created .env file and type:
 <li>A JWT refresh token secret:<pre>ACCESS_TOKEN_SECRET = &ltYour_Refresh_Token_Secret&gt</pre></li>
 </ul>
 
+
+
 <h2>Starting the app</h2>
 In order to start the app, you will need to:
 <ul>
