@@ -20,6 +20,8 @@ Once you obtain the id, open the newly created .env file and type:
 
 
 
+
+
 <h2>Starting the app</h2>
 In order to start the app, you will need to:
 <ul>
