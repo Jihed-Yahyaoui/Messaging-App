@@ -1,44 +1,6 @@
 import { Box, ButtonBase } from "@mui/material";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
-import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
-
-function FileCard({ name, removeFile }) {
-  return (
-    <Box
-      sx={{
-        backgroundColor: "#ddd",
-        borderRadius: "10px",
-        padding: "10px",
-        display: "flex",
-        alignItems: "center",
-        position: "relative",
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          right: "-7px",
-          top: "-7px",
-          borderRadius: "15px",
-          backgroundColor: "#bbb",
-          cursor: "pointer",
-          width: "1.3rem",
-          aspectRatio: "1/1",
-          textAlign: "center",
-          transition: "all 0.25s",
-          "&:hover": {
-            backgroundColor: "#999",
-          },
-        }}
-        onClick={() => removeFile(name)}
-      >
-        &nbsp;x&nbsp;
-      </Box>
-      <InsertDriveFileIcon />
-      <Box>{name}</Box>
-    </Box>
-  );
-}
+import FileUploadCard from "./FileUploadCard";
 
 export default function FilesUploadBox({
   files,
@@ -68,8 +30,15 @@ export default function FilesUploadBox({
       <ButtonBase>
         <AddCircleIcon sx={{ fontSize: "36px" }} onClick={addFile} />
       </ButtonBase>
-      {Array.from(files.values()).map((file) => (
-        <FileCard key={file.name} name={file.name} removeFile={removeFile} />
+
+      {/* Loop through selected files */}
+      {Array.from(files.entries()).map(([key, value]) => (
+        <FileUploadCard
+          key={key}
+          uniqueName={key}
+          filename={value.name}
+          removeFile={removeFile}
+        />
       ))}
     </Box>
   );

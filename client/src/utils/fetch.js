@@ -1,5 +1,5 @@
 export const postData = async (url, data, tokens = {}, signal = null) => {
-    return await fetch(`http://localhost:5000/${url}`, {
+    return await fetch(`${import.meta.env.VITE_SERVER_LINK}/${url}`, {
         method: "POST",
         headers: {
             'Accept': 'application/json',
@@ -12,7 +12,7 @@ export const postData = async (url, data, tokens = {}, signal = null) => {
 }
 
 export const getData = async (url, tokens = {}, signal = null) => {
-    return await fetch(`http://localhost:5000/${url}`, {
+    return await fetch(`${import.meta.env.VITE_SERVER_LINK}/${url}`, {
         headers: tokens,
         signal
     })

@@ -13,13 +13,9 @@ const messageSchema = new mongoose.Schema({
         type: String,
         default: ""
     },
-    filename: {
-        type: String,
-        default: ""
-    },
-    mimetype: {
-        type: String,
-        default: ""
+    file: {
+        type: mongoose.Types.ObjectId,
+        ref: 'files'
     }
 }, { timestamps: true })
 

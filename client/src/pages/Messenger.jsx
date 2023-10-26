@@ -8,62 +8,80 @@ import { socket } from "../utils/socket";
 import { getData } from "../utils/fetch";
 import InputBtn from "../components/InputBtn";
 import FilesUploadBox from "../components/FilesUploadBox";
+import MessageContainer from "../components/MessageContainer";
+import { v4 as uuidv4 } from "uuid";
 
+// Voice record and visualize https://mdn.github.io/dom-examples/media/web-dictaphone/
 export default function Messenger() {
   const [messages, setMessages] = useState([]);
-  const [inputVal, setInputVal] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const [files, setFiles] = useState(new FormData());
-  const areFilesEmpty = files.keys().next().done;
-
+  const areFilesEmpty = !Array.from(files).length;
+  
   const id = useSelector((state) => state.user.id); // User Id
   const secondUserId = useParams(id).id; // The second user id
 
   // Adds a message to the interface
-  const addMessage = ({ text, senderId }) => {
-    if (senderId === secondUserId || senderId === id)
-      setMessages([{ senderId, text }, ...messages]);
+  const addMessage = (newMessage) => {
+
+      setMessages(messages => [newMessage, ...messages]);
   };
 
   // Sends messages and files and adds them to the interface
   const sendMessage = () => {
-    if (inputVal) {
-      const newMsg = { senderId: id, secondUserId, text: inputVal };
-      setMessages([newMsg, ...messages]);
-      setInputVal("");
+    const sentMessages = [];
+    let newMessage = {};
 
-      socket.emit("message", newMsg);
+    // Queue text message
+    if (inputValue) {
+      newMessage = { senderId: id, secondUserId, text: inputValue };
+      sentMessages.push(newMessage);
     }
 
+    // Save files
     if (!areFilesEmpty) {
-      fetch(`http://localhost:5000/file/${secondUserId}?senderId=${id}`, {
+      fetch(`${import.meta.env.VITE_SERVER_LINK}/file/${secondUserId}?senderId=${id}`, {
         method: "POST",
         body: files,
       }).then((res) => console.log(res));
 
-      // eslint-disable-next-line no-unused-vars
+      // Queue file messages
       for (let [filename, file] of files) {
-        const newFile = { senderId: id, secondUserId, filename, mimetype: file.type };
-        socket.emit("message", newFile);
-        
+        newMessage = {
+          filename,
+          originalname: file.name,
+        };
+        sentMessages.push({ senderId: id, secondUserId, file: newMessage });
       }
     }
+
+    // Send Messages
+    for (let i = 0; i < sentMessages.length; i++)
+      socket.emit("message", sentMessages[i]);
+    setMessages([...sentMessages.reverse(), ...messages]);
+
+    // Reset input
+    setInputValue("");
+    setFiles(new FormData());
   };
 
   // Add one or many files (NO duplicates)
+  // Copy files into a new object and assign each file a uuid
   const addFile = async () => {
     const selectedFiles = await window.showOpenFilePicker({ multiple: true });
     const readingFiles = new FormData();
 
-    // eslint-disable-next-line no-unused-vars
     for (let [name, file] of files) readingFiles.append(name, file);
 
     for (let selectedFile of selectedFiles) {
       let file = await selectedFile.getFile();
+
       if (readingFiles.get(file.name)) {
         console.log("Duplicate file found!");
         return;
       }
-      readingFiles.append(file.name, file);
+
+      readingFiles.append(uuidv4(), file);
     }
     setFiles(readingFiles);
   };
@@ -71,7 +89,6 @@ export default function Messenger() {
   const removeFile = (filename) => {
     const readingFiles = new FormData();
 
-    // eslint-disable-next-line no-unused-vars
     for (let [name, file] of files) readingFiles.append(name, file);
 
     readingFiles.delete(filename);
@@ -87,8 +104,8 @@ export default function Messenger() {
     };
   }); // Do not add dependency array even empty
 
+  // Get messages from DB and add to the interface
   useEffect(() => {
-    // Get messages from DB and add to the interface
     getData(`message/${secondUserId}?senderId=${id}`).then((res) => {
       setMessages(res.messages.reverse());
     });
@@ -117,37 +134,10 @@ export default function Messenger() {
       >
         {/* Messages are mapped through and shown here */}
         {messages.map((msg, index) => (
-          // Message container
-          <Grid
-            item
-            container
-            direction="row"
-            key={index}
-            sx={{
-              width: "100%",
-              justifyContent:
-                msg.senderId === secondUserId ? "flex-start" : "flex-end",
-              padding: "0.5rem",
-
-              border: "1px solid #ccc",
-            }}
-          >
-            {/* Message text container */}
-            <Grid
-              item
-              sx={{
-                maxWidth: "40%",
-                padding: " 0.3rem",
-                border: "1px solid #ccc",
-                borderRadius: "10px",
-                wordBreak: "break-word",
-              }}
-            >
-              <Box>{msg.text}</Box>
-            </Grid>
-          </Grid>
+          <MessageContainer key={index} msg={msg} secondUserId={secondUserId} />
         ))}
       </Grid>
+
       {/* A container for input and upload */}
       <Box sx={{ position: "relative", width: "100%" }}>
         {/* Upload Box */}
@@ -159,7 +149,7 @@ export default function Messenger() {
         />
         {/* Input Box */}
         <TextField
-          value={inputVal}
+          value={inputValue}
           variant="outlined"
           autoComplete="false"
           sx={{
@@ -168,7 +158,7 @@ export default function Messenger() {
               paddingRight: "6px",
             },
           }}
-          onChange={(e) => setInputVal(e.target.value)}
+          onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={(e) => (e.key === "Enter" ? sendMessage() : null)}
           InputProps={{
             endAdornment: (
