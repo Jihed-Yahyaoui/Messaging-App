@@ -1,4 +1,8 @@
 # Messaging App
+<b>I have stopped working on this app in order to start developing a better messaging app: Superchat!
+
+Made with Next.js, Typescript and Firebase, it's probably better that this but definitely better education-wise. Thanks for any contributions made to this project!
+</b>
 This app has been made with MERN Stack. It is still a work in progress and it's purely made for educational purposes, <i>any suggestions to improve the code or add new fancy features are welcome! </i>
 
 <h2>Configuration</h2>
